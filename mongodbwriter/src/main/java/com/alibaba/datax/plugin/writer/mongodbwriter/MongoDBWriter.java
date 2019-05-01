@@ -329,7 +329,7 @@ public class MongoDBWriter extends Writer {
                                 query.put(column, data.get(column));
                             }
                         }
-                        UpdateOneModel<BasicDBObject> updateOneModel = new UpdateOneModel<BasicDBObject>(query, data, new UpdateOptions().upsert(true));
+                        UpdateOneModel<BasicDBObject> updateOneModel = new UpdateOneModel<BasicDBObject>(query, new BasicDBObject("$set", data), new UpdateOptions().upsert(true));
                         updateOneModelList.add(updateOneModel);
                     }
                     collection.bulkWrite(updateOneModelList, new BulkWriteOptions().ordered(false));
