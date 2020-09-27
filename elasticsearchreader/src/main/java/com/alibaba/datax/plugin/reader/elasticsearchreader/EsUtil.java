@@ -10,28 +10,17 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
-import org.elasticsearch.action.search.*;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.slice.SliceBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -45,13 +34,13 @@ import java.util.Map;
  */
 public class EsUtil {
     private String scrollId = null;
-    private  Scroll scroll;
+    private Scroll scroll;
 
 
     public static RestHighLevelClient getClient(List<Object> list, String username, String password, Configuration config) {
         List<HttpHost> httpHostList = new ArrayList<>();
         for (Object add : list) {
-            String address = (String)add;
+            String address = (String) add;
             String[] pair = address.split(":");
             httpHostList.add(new HttpHost(pair[0], Integer.parseInt(pair[1]), "http"));
         }
@@ -81,15 +70,15 @@ public class EsUtil {
 
     public Iterator<Map<String, Object>> searchScroll(SearchRequest searchRequest, RestHighLevelClient client) throws IOException {
         SearchHit[] searchHits;
-        if (scrollId == null) {
+        if (this.scrollId == null) {
             SearchResponse searchResponse = client.search(searchRequest);
-            scrollId = searchResponse.getScrollId();
+            this.scrollId = searchResponse.getScrollId();
             searchHits = searchResponse.getHits().getHits();
         } else {
-            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-            scrollRequest.scroll(scroll);
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(this.scrollId);
+            scrollRequest.scroll(this.scroll);
             SearchResponse searchResponse = client.searchScroll(scrollRequest);
-            scrollId = searchResponse.getScrollId();
+            this.scrollId = searchResponse.getScrollId();
             searchHits = searchResponse.getHits().getHits();
         }
 
@@ -104,9 +93,7 @@ public class EsUtil {
     }
 
 
-
-
-    public  EsResultSet iterator(RestHighLevelClient client,SearchRequest  searchRequest,Scroll scroll) {
+    public EsResultSet iterator(RestHighLevelClient client, SearchRequest searchRequest, Scroll scroll) {
         this.scroll = scroll;
         SearchResponse searchResponse = null;
         EsResultSet esResultSet = null;
@@ -121,10 +108,12 @@ public class EsUtil {
             for (SearchHit searchHit : searchHits) {
                 String source = searchHit.getSourceAsString();
                 JSONObject parseObject = JSONObject.parseObject(source);
+                String id = searchHit.getId();
+                parseObject.put("_id", id);
                 list.add(parseObject);
             }
 
-            esResultSet= new EsResultSet(client, scrollId, list, this.scroll );
+            esResultSet = new EsResultSet(client, scrollId, list, this.scroll);
         } catch (IOException e) {
             e.printStackTrace();
         }
