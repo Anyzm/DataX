@@ -109,7 +109,9 @@ public class EsUtil {
                 String source = searchHit.getSourceAsString();
                 JSONObject parseObject = JSONObject.parseObject(source);
                 String id = searchHit.getId();
+                String type = searchHit.getType();
                 parseObject.put("_id", id);
+                parseObject.put("_type", type);
                 list.add(parseObject);
             }
 
